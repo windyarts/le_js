@@ -43,6 +43,15 @@
         var _token = options.token;
         /** @type {boolean} */
         var _print = options.print;
+        /** @type {string} */
+        var _build = options.build;
+        /** @type {string} */
+        var _userId = options.userId;
+        /** @type {string} */
+        var _userName = options.userName;
+        /** @type {string} */
+        var _sessionId = options.sessionId;
+
         /**
          * @type {string} */
         var _endpoint;
@@ -117,7 +126,11 @@
         var _rawLog = function(msg) {
             var event = _getEvent.apply(this, arguments);
 
-            var data = {event: event};
+            var data = {
+                clientTimestamp: toUTCTimestamp(new Date()),
+                device: 'Browser: ' + window.navigator.userAgent,
+                data: event
+            };
 
             // Add agent info if required
             if (_pageInfo !== 'never') {
@@ -238,7 +251,9 @@
                 request.open("POST", uri, true);
                 if (request.constructor === XMLHttpRequest) {
                     request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                    request.setRequestHeader('Content-type', 'text/json');
+                    request.setRequestHeader('Content-type', 'application/json;charset=utf-8');
+                    request.setRequestHeader('X-Product-Key', token);
+                    request.setRequestHeader('X-Product-Auth', md5(data + token));
                 }
                 request.send(data);
             }
@@ -259,20 +274,45 @@
             page_info: 'never',
             print: false,
             endpoint: null,
-            token: null
+            token: null,
+            userId: null,
+            userName: null,
+            sessionId: null,
+            build: null,
+            device: null
         };
-        
-        if (typeof options === "object")
-            for (var k in options)
-                dict[k] = options[k];
-        else
-            throw new Error("Invalid parameters for createLogStream()");
 
-        if (dict.token === null) {
-            throw new Error("Token not present.");
-        } else {
-            logger = new LogStream(dict);
+        function toString(value, key) {
+            if ((typeof value === 'string' && value.length) || typeof value === 'number') {
+                return value.toString(); 
+            } else {
+                throw new Error(key + ' is required and should be a string');
+            }
         }
+
+        var requiredKeys = {
+            token: toString,
+            userId: toString,
+            userName: toString,
+            sessionId: toString,
+            build: toString
+        };
+
+        var k;
+        
+        if (typeof options === "object") {
+            for (k in options) {
+                dict[k] = options[k];
+            }
+        } else {
+            throw new Error("Invalid parameters for createLogStream()");
+        }
+
+        for (k in requiredKeys) {
+            dict[k] = requiredKeys[k](dict[k], k);
+        }
+
+        logger = new LogStream(dict);
 
         var _log = function(msg) {
             if (logger) {
@@ -314,13 +354,14 @@
             name : "default"
         };
 
-        if (typeof options === "object")
-            for (var k in options)
+        if (typeof options === "object") {
+            for (var k in options) {
                 dict[k] = options[k];
-        else if (typeof options === "string")
-            dict.token = options;
-        else
+            }
+        }
+        else {
             throw new Error("Invalid parameters for init()");
+        }
 
         return _createLogStream(dict);
     };
@@ -332,6 +373,65 @@
 
         delete loggers[name];
     };
+
+    var toUTCTimestamp = (function() {
+
+        function toUTCTimestamp(date) {
+            return date.getFullYear() +
+                '-' + leftZeroFill(date.getMonth() + 1, 2) +
+                '-' + leftZeroFill(date.getDate(), 2) +
+                'T' + leftZeroFill(date.getHours(), 2) +
+                ':' + leftZeroFill(date.getMinutes(), 2) +
+                ':' + leftZeroFill(date.getSeconds(), 2) +
+                '.' + toInt(date.getMilliseconds() * 1000) +
+                ZZ(date);
+        }
+
+        function leftZeroFill(number, targetLength, forceSign) {
+            var output = '' + Math.abs(number),
+                sign = number >= 0;
+
+            while (output.length < targetLength) {
+                output = '0' + output;
+            }
+            return (sign ? (forceSign ? '+' : '') : '-') + output;
+        }
+
+        function toInt(argumentForCoercion) {
+            var coercedNumber = +argumentForCoercion,
+                value = 0;
+
+            if (coercedNumber !== 0 && isFinite(coercedNumber)) {
+                if (coercedNumber >= 0) {
+                    value = Math.floor(coercedNumber);
+                } else {
+                    value = Math.ceil(coercedNumber);
+                }
+            }
+
+            return value;
+        }
+
+        function ZZ(date) {
+            var a = dateUtcOffset(date),
+                b = '+';
+                if (a < 0) {
+                    a = -a;
+                    b = '-';
+                }
+                return b + leftZeroFill(toInt(a / 60), 2) + ':' + leftZeroFill(toInt(a) % 60, 2);
+            }
+
+        function dateUtcOffset(date) {
+            // On Firefox.24 Date#getTimezoneOffset returns a floating point.
+            // https://github.com/moment/moment/pull/1871
+            return -Math.round(date.getTimezoneOffset() / 15) * 15;
+        }
+
+        return toUTCTimestamp;
+    })();
+
+    
 
     var md5 = (function () {
 

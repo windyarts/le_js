@@ -7,6 +7,7 @@ var replace = require('gulp-replace');
 
 var testFiles = [
     'src/le.js',
+    'test/md5.js',
     'test/sinon*.js',
     'test/*Spec.js'
 ];

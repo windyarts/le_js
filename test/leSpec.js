@@ -1,7 +1,14 @@
 /*jslint loopfunc:true*/
-/*globals describe, it, expect, LE, sinon, afterEach, beforeEach, jasmine, window, JSON*/
+/*globals describe, it, expect, LE, sinon, afterEach, beforeEach, jasmine, window, JSON, md5*/
 var GLOBAL = this;
 var TOKEN = 'test_token';
+var initConfig = {
+    token: TOKEN,
+    userId: 'test',
+    userName: 'tester',
+    build: '1.2',
+    sessionId: 'session-test'
+};
 
 function destroy(){
     LE.destroy('default');
@@ -29,27 +36,61 @@ function restoreXMLHttpRequests(){
     }
 }
 
+
 describe('construction', function () {
-    it('with string', function () {
-        expect(LE.init(TOKEN)).toBe(true);
-    });
 
     it('with object', function () {
-        expect(LE.init({token: TOKEN})).toBe(true);
+        expect(LE.init(initConfig)).toBe(true);
     });
 
     // TODO: Test Raul's multi logger
 
     describe('fails', function () {
-        it('without token', function () {
+        it('without options', function () {
             expect(LE.init).toThrow("Invalid parameters for init()");
         });
 
-        it('without token (object)', function () {
+        it('without token', function () {
             expect(function() {
-                LE.init({});
-            }).toThrow("Token not present.");
+                LE.init({
+                    userId: 'test',
+                    userName: 'tester',
+                    build: '1.2',
+                    sessionId: 'session-test'
+                });
+            }).toThrow('token is required and should be a string');
         });
+    });
+
+    afterEach(destroy);
+});
+
+describe('sending headers', function() {
+    beforeEach(mockXMLHttpRequests);
+    beforeEach(addGetJson);
+    beforeEach(function() {
+        LE.init(initConfig);
+    });
+
+    it('sends X-Product-Key as header', function() {
+        LE.log('hi');
+
+        expect(this.requestList[0].requestHeaders['X-Product-Key']).toBe(TOKEN);
+    });
+
+    it('sends X-Product-Auth as header', function() {
+        LE.log('hi');
+
+        var request = this.requestList[0];
+        var hash = md5(request.requestBody + request.requestHeaders['X-Product-Key']);
+
+        expect(this.requestList[0].requestHeaders['X-Product-Auth']).toBe(hash);
+    });
+
+    it('sends Content-type as "application/json;charset=utf-8"', function() {
+        LE.log('hi');
+
+        expect(this.requestList[0].requestHeaders['Content-type']).toBe('application/json;charset=utf-8');
     });
 
     afterEach(destroy);
@@ -59,19 +100,31 @@ describe('sending messages', function () {
     beforeEach(mockXMLHttpRequests);
     beforeEach(addGetJson);
     beforeEach(function() {
-        LE.init({token: TOKEN});
+        LE.init(initConfig);
+    });
+
+    it('logs clientTimestamp as format of 2012–03–14T02:33:42.416587+00:00', function() {
+        LE.log('hi');
+
+        expect(this.getXhrJson(0).clientTimestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}/);
+    });
+
+    it('logs device as format of "Browser: $userAgent$"', function() {
+        LE.log('hi');
+
+        expect(this.getXhrJson(0).device).toMatch(/^Browser: /);
     });
 
     it('logs null values', function(){
         LE.log(null);
 
-        expect(this.getXhrJson(0).event).toBe(null);
+        expect(this.getXhrJson(0).data).toBe(null);
     });
 
     it('logs undefined values', function(){
         LE.log(undefined);
 
-        expect(this.getXhrJson(0).event).toBe('undefined');
+        expect(this.getXhrJson(0).data).toBe('undefined');
     });
 
     it('logs object with nullish properties', function(){
@@ -80,7 +133,7 @@ describe('sending messages', function () {
             nullVal: null
         });
 
-        var event = this.getXhrJson(0).event;
+        var event = this.getXhrJson(0).data;
         expect(event.undef).toBe('undefined');
         expect(event.nullVal).toBe(null);
     });
@@ -91,7 +144,7 @@ describe('sending messages', function () {
             null
         ]);
 
-        var event = this.getXhrJson(0).event;
+        var event = this.getXhrJson(0).data;
         expect(event[0]).toBe('undefined');
         expect(event[1]).toBe(null);
     });
@@ -102,7 +155,7 @@ describe('sending messages', function () {
 
         LE.log.apply(LE, args);
 
-        var event = this.getXhrJson(0).event;
+        var event = this.getXhrJson(0).data;
         expect(event.length).toBe(3);
         expect(event[0]).toBe(args[0]);
         expect(event[1]).toBe(args[1]);
@@ -116,7 +169,7 @@ describe('sends log level', function(){
     beforeEach(mockXMLHttpRequests);
     beforeEach(addGetJson);
     beforeEach(function() {
-        LE.init({token: TOKEN});
+        LE.init(initConfig);
     });
 
     var methods = [
@@ -141,104 +194,109 @@ describe('sends log level', function(){
 
         LE.log(a);
 
-        expect(this.getXhrJson(0).event.b).toBe('<?>');
+        expect(this.getXhrJson(0).data.b).toBe('<?>');
     });
 
     afterEach(restoreXMLHttpRequests);
     afterEach(destroy);
 });
 
-describe('sending user agent data', function(){
-    beforeEach(mockXMLHttpRequests);
-    beforeEach(addGetJson);
+// describe('sending user agent data', function(){
+//     beforeEach(mockXMLHttpRequests);
+//     beforeEach(addGetJson);
 
-    function checkAgentInfo(agent){
-        expect(agent).toBeDefined();
+//     function checkAgentInfo(agent){
+//         expect(agent).toBeDefined();
 
-        // Perhaps these could be filled in since we're running in a
-        // real browser now?
-        expect(agent.url)     .toBeDefined();
-        expect(agent.referrer).toBeDefined();
-        expect(agent.screen)  .toBeDefined();
-        expect(agent.window)  .toBeDefined();
-        expect(agent.browser) .toBeDefined();
-        expect(agent.platform).toBeDefined();
-    }
+//         // Perhaps these could be filled in since we're running in a
+//         // real browser now?
+//         expect(agent.url)     .toBeDefined();
+//         expect(agent.referrer).toBeDefined();
+//         expect(agent.screen)  .toBeDefined();
+//         expect(agent.window)  .toBeDefined();
+//         expect(agent.browser) .toBeDefined();
+//         expect(agent.platform).toBeDefined();
+//     }
 
-    it('page_info: never - never sends log data', function(){
-        LE.init({token: TOKEN, page_info: 'never'});
+//     it('page_info: never - never sends log data', function(){
+//         LE.init({token: TOKEN, page_info: 'never'});
 
-        LE.log('hi');
+//         LE.log('hi');
 
-        var data = this.getXhrJson(0);
+//         var data = this.getXhrJson(0);
 
-        expect(data.event).toBe('hi');
-        expect(this.getXhrJson(0).agent).toBeUndefined();
-    });
+//         expect(data.data).toBe('hi');
+//         expect(this.getXhrJson(0).agent).toBeUndefined();
+//     });
 
-    it('page_info: per-entry - sends log data for each log', function(){
-        LE.init({token: TOKEN, page_info: 'per-entry'});
+//     it('page_info: per-entry - sends log data for each log', function(){
+//         LE.init({token: TOKEN, page_info: 'per-entry'});
 
-        LE.log('hi');
+//         LE.log('hi');
 
-        // Check data is sent the first time
-        checkAgentInfo(this.getXhrJson(0).event);
+//         // Check data is sent the first time
+//         checkAgentInfo(this.getXhrJson(0).data);
 
-        // Respond to first request so that the 2nd request will be made
-        this.requestList[0].respond();
+//         // Respond to first request so that the 2nd request will be made
+//         this.requestList[0].respond();
 
-        expect(this.getXhrJson(1).event).toBe('hi');
+//         expect(this.getXhrJson(1).data).toBe('hi');
 
-        LE.log('hi again');
-        this.requestList[1].respond();
+//         LE.log('hi again');
+//         this.requestList[1].respond();
 
-        // Check that page info is sent subsequent times
-        checkAgentInfo(this.getXhrJson(2).event);
+//         // Check that page info is sent subsequent times
+//         checkAgentInfo(this.getXhrJson(2).data);
 
-        this.requestList[2].respond();
+//         this.requestList[2].respond();
 
-        expect(this.getXhrJson(3).event).toBe('hi again');
-    });
+//         expect(this.getXhrJson(3).data).toBe('hi again');
+//     });
 
-    it('page_info: per-page - always sends data for each log', function(){
-        LE.init({token: TOKEN, page_info: 'per-page'});
+//     it('page_info: per-page - always sends data for each log', function(){
+//         LE.init({token: TOKEN, page_info: 'per-page'});
 
-        LE.log('hi');
+//         LE.log('hi');
 
-        // Check data is sent the first time
-        checkAgentInfo(this.getXhrJson(0).event);
+//         // Check data is sent the first time
+//         checkAgentInfo(this.getXhrJson(0).data);
 
-        // Respond to first request so that the 2nd request will be made
-        this.requestList[0].respond();
+//         // Respond to first request so that the 2nd request will be made
+//         this.requestList[0].respond();
 
-        expect(this.getXhrJson(1).event).toBe('hi');
+//         expect(this.getXhrJson(1).data).toBe('hi');
 
-        LE.log('hi again');
-        this.requestList[1].respond();
+//         LE.log('hi again');
+//         this.requestList[1].respond();
 
-        // Check that no data is sent subsequent times
-        expect(this.getXhrJson(2).event).toBe('hi again');
-    });
+//         // Check that no data is sent subsequent times
+//         expect(this.getXhrJson(2).data).toBe('hi again');
+//     });
 
-    afterEach(destroy);
-});
+//     afterEach(destroy);
+// });
 
 describe('destroys log streams', function () {
     it('default', function () {
-        LE.init(TOKEN);
+        LE.init(initConfig);
         LE.destroy();
 
         expect(function(){
-            LE.init(TOKEN);
+            LE.init(initConfig);
         }).not.toThrow();
     });
 
     it('custom name', function () {
-        LE.init({token: TOKEN, name: 'test'});
+        var testConfig = {};
+        for (var k in initConfig) {
+            testConfig[k] = initConfig[k];
+        }
+        testConfig.name = 'test';
+        LE.init(testConfig);
         LE.destroy('test');
 
         expect(function(){
-            LE.init({token: TOKEN, name: 'test'});
+            LE.init(testConfig);
         }).not.toThrow();
     });
 
@@ -250,7 +308,7 @@ describe('custom endpoint', function () {
     beforeEach(addGetJson);
     beforeEach(function() {
         window.LEENDPOINT = 'somwhere.com/custom-logging';
-        LE.init({token: TOKEN});
+        LE.init(initConfig);
     });
     
     it('can be set', function () {
@@ -263,4 +321,3 @@ describe('custom endpoint', function () {
     afterEach(restoreXMLHttpRequests);
     afterEach(destroy);
 });
-
