@@ -37,12 +37,6 @@
      * @param {Object} options
      */
     function LogStream(options) {
-        /**
-         * @const
-         * @type {string} */
-        var _traceCode = (Math.random() + Math.PI).toString(36).substring(2, 10);
-        /** @type {boolean} */
-        var _doTrace = options.trace;
         /** @type {string} */
         var _pageInfo = options.page_info;
         /** @type {string} */
@@ -77,19 +71,6 @@
         var _active = false;
         /** @type {boolean} */
         var _sentPageInfo = false;
-        
-        if (options.catchall) {
-            var oldHandler = window.onerror;
-            var newHandler = function(msg, url, line) {
-                _rawLog({error: msg, line: line, location: url}).level('ERROR').send();
-                if (oldHandler) {
-                    return oldHandler(msg, url, line);
-                } else {
-                    return false;
-                }
-            };
-            window.onerror = newHandler;
-        }
 
         var _agentInfo = function() {
             var nav = window.navigator || {doNotTrack: undefined};
@@ -146,11 +127,6 @@
                         typeof event.browser === "undefined")
                       _rawLog(_agentInfo()).level('PAGE').send();
                 }
-            }
-
-            // Add trace code if required
-            if (_doTrace) {
-                data.trace = _traceCode;
             }
 
             return {level: function(l) {
@@ -280,8 +256,6 @@
         // Default values
         var dict = {
             ssl: true,
-            catchall: false,
-            trace: true,
             page_info: 'never',
             print: false,
             endpoint: null,

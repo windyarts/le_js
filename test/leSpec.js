@@ -59,7 +59,7 @@ describe('sending messages', function () {
     beforeEach(mockXMLHttpRequests);
     beforeEach(addGetJson);
     beforeEach(function() {
-        LE.init({token: TOKEN, trace: true});
+        LE.init({token: TOKEN});
     });
 
     it('logs null values', function(){
@@ -96,13 +96,6 @@ describe('sending messages', function () {
         expect(event[1]).toBe(null);
     });
 
-    it('sends trace code', function(){
-        LE.log('test');
-
-        var trace = this.getXhrJson(0).trace;
-        expect(trace).toEqual(jasmine.any(String));
-        expect(trace.length).toBe(8);
-    });
 
     it('accepts multiple arguments', function(){
         var args = ['test', 1, undefined];
@@ -230,53 +223,6 @@ describe('sending user agent data', function(){
         expect(this.getXhrJson(2).event).toBe('hi again');
     });
 
-    afterEach(destroy);
-});
-
-describe('catch all option', function () {
-    beforeEach(mockXMLHttpRequests);
-    beforeEach(function(){
-        this.oldErrorHandler = sinon.stub(GLOBAL, 'onerror')
-            .returns(true);
-    });
-
-    it('assigns onerror handler', function (){
-        LE.init({token: TOKEN, catchall: true});
-        // Don't test if onerror is set because #1 we've got a stub
-        // and 2nd, karma has its handler.
-        expect(GLOBAL.onerror).not.toBe(this.oldErrorHandler);
-    });
-
-    it('sends errors', function (){
-        // Don't care what happens to this, just ignore the error
-        LE.init({token: TOKEN, catchall: true});
-
-        // Check if onerror handler is not the stub from above
-        expect(GLOBAL.onerror).not.toBe(this.oldErrorHandler);
-
-        expect(this.requestList.length).toBe(0);
-
-        // Pretend to trigger an error like the browser might
-        GLOBAL.onerror('Script error', 'http://example.com', 0);
-
-        expect(this.requestList.length).toBe(1);
-    });
-
-    it('bubbles onerror calls', function (){
-        LE.init({token: TOKEN, catchall: true});
-
-        // Pretend to trigger an error like the browser might
-        GLOBAL.onerror('Script error', 'http://example.com', 0);
-
-        expect(this.oldErrorHandler.calledOnce).toBe(true);
-    });
-
-    afterEach(function(){
-        if(this.oldErrorHandler.restore){
-            this.oldErrorHandler.restore();
-        }
-    });
-    afterEach(restoreXMLHttpRequests);
     afterEach(destroy);
 });
 
