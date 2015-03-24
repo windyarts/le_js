@@ -120,10 +120,7 @@ describe('sends log level', function(){
     });
 
     var methods = [
-        'log',
-        'info',
-        'warn',
-        'error'
+        'log'
     ];
 
     for(var i=0; i<methods.length; i++){

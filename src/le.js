@@ -285,15 +285,6 @@
         return {
             log: function() {
                 _log.apply(this, arguments).level('LOG').send();
-            },
-            warn: function() {
-                _log.apply(this, arguments).level('WARN').send();
-            },
-            error: function() {
-                _log.apply(this, arguments).level('ERROR').send();
-            },
-            info: function() {
-                _log.apply(this, arguments).level('INFO').send();
             }
         };
     }
@@ -597,18 +588,6 @@
         log: function() {
             for (var k in loggers)
                 loggers[k].log.apply(this, arguments);
-        },
-        warn: function() {
-            for (var k in loggers)
-                loggers[k].warn.apply(this, arguments);
-        },
-        error: function() {
-            for (var k in loggers)
-                loggers[k].error.apply(this, arguments);
-        },
-        info: function() {
-            for (var k in loggers)
-                loggers[k].info.apply(this, arguments);
         }
     };
 }));
