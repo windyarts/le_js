@@ -11,7 +11,7 @@ var testFiles = [
     'test/*Spec.js'
 ];
 var apiVersion = 1;
-var apiEndpoint = 'js.logentries.com/v' + apiVersion;
+var apiEndpoint = 'api.traintracks.io/v' + apiVersion + '/events';
 
 
 gulp.task('default', ['test', 'build']);
