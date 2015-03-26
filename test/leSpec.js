@@ -92,7 +92,8 @@ describe('sending headers', function() {
 
         expect(this.requestList[0].requestHeaders['Content-type']).toBe('application/json;charset=utf-8');
     });
-
+    
+    afterEach(restoreXMLHttpRequests);
     afterEach(destroy);
 });
 
@@ -135,6 +136,7 @@ describe('sending common information', function() {
         expect(this.getXhrJson(0).sessionId).toBe('session-test');
     });    
 
+    afterEach(restoreXMLHttpRequests);
     afterEach(destroy);
 });
 
