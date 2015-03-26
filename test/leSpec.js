@@ -1,5 +1,5 @@
 /*jslint loopfunc:true*/
-/*globals describe, it, expect, TT, sinon, afterEach, beforeEach, jasmine, window, JSON, md5*/
+/*globals describe, it, expect, TT, sinon, afterEach, beforeEach, jasmine, window, JSON, md5, console, spyOn*/
 var GLOBAL = this;
 var TOKEN = 'test_token';
 var initConfig = {
@@ -36,10 +36,21 @@ function restoreXMLHttpRequests(){
     }
 }
 
+function clone(obj) {
+    var excludes = Array.prototype.slice.call(arguments, 1);
+    var res = {};
+    for (var k in obj) {
+        if (excludes.indexOf(k) === -1) {
+            res[k] = obj[k];
+        }
+    }
+    return res;
+}
+
 
 describe('construction', function () {
 
-    it('with object', function () {
+    it('with options', function () {
         expect(TT.init(initConfig)).toBe(true);
     });
 
@@ -50,16 +61,14 @@ describe('construction', function () {
             expect(TT.init).toThrow("Invalid parameters for init()");
         });
 
-        it('without token', function () {
-            expect(function() {
-                TT.init({
-                    userId: 'test',
-                    userName: 'tester',
-                    build: '1.2',
-                    sessionId: 'session-test'
-                });
-            }).toThrow('token is required and should be a string');
+        ['token', 'userId', 'userName', 'build', 'sessionId'].forEach(function(key) {
+            it('without ' + key, function() {
+                expect(function() {
+                    TT.init(clone(initConfig, key));    
+                }).toThrow(key + ' is required and should be a string');
+            });
         });
+
     });
 
     afterEach(destroy);
@@ -73,13 +82,13 @@ describe('sending headers', function() {
     });
 
     it('sends X-Product-Key as header', function() {
-        TT.log('hi');
+        TT.log('test.event', {});
 
         expect(this.requestList[0].requestHeaders['X-Product-Key']).toBe(TOKEN);
     });
 
     it('sends X-Product-Auth as header', function() {
-        TT.log('hi');
+        TT.log('test.event', {});
 
         var request = this.requestList[0];
         var hash = md5(request.requestBody + request.requestHeaders['X-Product-Key']);
@@ -88,11 +97,11 @@ describe('sending headers', function() {
     });
 
     it('sends Content-type as "application/json;charset=utf-8"', function() {
-        TT.log('hi');
+        TT.log('test.event', {});
 
         expect(this.requestList[0].requestHeaders['Content-type']).toBe('application/json;charset=utf-8');
     });
-    
+
     afterEach(restoreXMLHttpRequests);
     afterEach(destroy);
 });
@@ -105,34 +114,34 @@ describe('sending common information', function() {
     });
 
     it('logs clientTimestamp as format of 2012–03–14T02:33:42.416587+00:00', function() {
-        TT.log('hi');
+        TT.log('test.event', {});
 
         expect(this.getXhrJson(0).clientTimestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}/);
     });
 
     it('logs device as format of "Browser: $userAgent$" if not provided', function() {
-        TT.log('hi');
+        TT.log('test.event', {});
 
         expect(this.getXhrJson(0).device).toMatch(/^Browser: /);
     });
 
     it('logs build as init options', function() {
-        TT.log('hi');
+        TT.log('test.event', {});
         expect(this.getXhrJson(0).build).toBe('1.2');
     });
 
     it('logs userId as init options', function() {
-        TT.log('hi');
+        TT.log('test.event', {});
         expect(this.getXhrJson(0).userId).toBe('test');
     });
 
     it('logs userName as init options', function() {
-        TT.log('hi');
+        TT.log('test.event', {});
         expect(this.getXhrJson(0).userName).toBe('tester');
     });
 
     it('logs sessionId as init options', function() {
-        TT.log('hi');
+        TT.log('test.event', {});
         expect(this.getXhrJson(0).sessionId).toBe('session-test');
     });    
 
@@ -145,34 +154,61 @@ describe('sending messages', function () {
     beforeEach(addGetJson);
     beforeEach(function() {
         TT.init(initConfig);
+        spyOn(console, 'warn');
+    });
+
+    describe('fails', function() {
+        it('without arguments', function() {
+            expect(TT.log).toThrow('No arguments!');
+        });
+
+        it('without event type as string', function() {
+            expect(function() {
+                TT.log(123, {});
+            }).toThrow('Event type is required and should be string');
+        });
+    });
+
+    it('logs event type', function() {
+        TT.log('test.event', {});
+        expect(this.getXhrJson(0).eventType).toBe('test.event');
     });
 
     it('logs clientTimestamp as format of 2012–03–14T02:33:42.416587+00:00', function() {
-        TT.log('hi');
+        TT.log('test.event', {});
 
         expect(this.getXhrJson(0).clientTimestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}/);
     });
 
     it('logs device as format of "Browser: $userAgent$"', function() {
-        TT.log('hi');
+        TT.log('test.event', {});
 
         expect(this.getXhrJson(0).device).toMatch(/^Browser: /);
     });
 
-    it('logs null values', function(){
-        TT.log(null);
+    it('logs event data correctly', function() {
+        TT.log('test.data', {
+            random: 1
+        });
+        expect(this.getXhrJson(0).data).toEqual({ random: 1});
+    });
 
-        expect(this.getXhrJson(0).data).toBe(null);
+    it('logs null values', function(){
+        TT.log('null_event', null);
+
+        expect(this.requestList[0]).toBeUndefined();
+        expect(console.warn).toHaveBeenCalledWith("null_event won't be sent since event is not an object");
     });
 
     it('logs undefined values', function(){
-        TT.log(undefined);
+        TT.log('undefined_event', undefined);
 
-        expect(this.getXhrJson(0).data).toBe('undefined');
+        expect(this.requestList[0]).toBeUndefined();
+        expect(console.warn).toHaveBeenCalledWith("undefined_event won't be sent since event is not an object");
     });
 
     it('logs object with nullish properties', function(){
-        TT.log({
+        TT.log('nullish_event', {
             undef: undefined,
             nullVal: null
         });
@@ -183,27 +219,13 @@ describe('sending messages', function () {
     });
 
     it('logs array with nullish values', function(){
-        TT.log([
+        TT.log('array', [
             undefined,
             null
         ]);
 
-        var event = this.getXhrJson(0).data;
-        expect(event[0]).toBe('undefined');
-        expect(event[1]).toBe(null);
-    });
-
-
-    it('accepts multiple arguments', function(){
-        var args = ['test', 1, undefined];
-
-        TT.log.apply(TT, args);
-
-        var event = this.getXhrJson(0).data;
-        expect(event.length).toBe(3);
-        expect(event[0]).toBe(args[0]);
-        expect(event[1]).toBe(args[1]);
-        expect(event[2]).toBe('undefined');
+        expect(this.requestList[0]).toBeUndefined();
+        expect(console.warn).toHaveBeenCalledWith("array won't be sent since event is not an object");
     });
 
     afterEach(destroy);
@@ -226,7 +248,7 @@ describe('sends log level', function(){
 
         it(level, function(method, level){
             return function(){
-                TT[method]('test');
+                TT[method]('test', {});
                 expect(this.getXhrJson(0).level).toBe(level);
             };
         }(method, level));
@@ -236,7 +258,7 @@ describe('sends log level', function(){
         var a = {};
         a.b = a;
 
-        TT.log(a);
+        TT.log('cyclic', a);
 
         expect(this.getXhrJson(0).data.b).toBe('<?>');
     });
@@ -282,10 +304,10 @@ describe('custom endpoint', function () {
     });
     
     it('can be set', function () {
-        TT.log('some message');
+        TT.log('type', {});
         var lastReq = this.requestList[1]; //no idea why its sending two messages
         
-        expect(lastReq.url).toBe('https://somwhere.com/custom-logging/logs/test_token');
+        expect(lastReq.url).toBe('https://somwhere.com/custom-logging');
     });
     
     afterEach(restoreXMLHttpRequests);

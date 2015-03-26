@@ -111,24 +111,23 @@
             };
         };
 
-        var _getEvent = function() {
-            var raw = null;
-            var args = Array.prototype.slice.call(arguments);
-            if (args.length === 0) {
-                throw new Error("No arguments!");
-            } else if (args.length === 1) {
-                raw = args[0];
-            } else {
-                // Handle a variadic overload,
-                // e.g. _rawLog("some text ", x, " ...", 1);
-              raw = args;
+        var _warn = function() {
+            try {
+                console.warn.apply(console, arguments);
+            } catch (ex) {
+                console.log.apply(console, arguments);
             }
-            return raw;
         };
 
         // Single arg stops the compiler arity warning
-        var _rawLog = function(msg) {
-            var event = _getEvent.apply(this, arguments);
+        var _rawLog = function(eventType, event) {
+            if (!arguments.length) {
+                throw new Error("No arguments!");
+            }
+            
+            if (!eventType || typeof eventType !== 'string') {
+                throw new Error('Event type is required and should be string');
+            }
 
             var data = {
                 clientTimestamp: toUTCTimestamp(new Date()),
@@ -137,56 +136,60 @@
                 userName: _userName,
                 sessionId: _sessionId,
                 build: _build,
+                eventType: eventType,
                 data: event
             };
 
             return {level: function(l) {
-                // Don't log PAGE events to console
-                // PAGE events are generated for the agentInfo function
-                    if (_print && typeof console !== "undefined" && l !== 'PAGE') {
-                      try {
-                        console[l.toLowerCase()].call(console, data);
-                      } catch (ex) {
-                        // IE compat fix
-                        console.log(data);
-                      }
+                if (_print && typeof console !== "undefined" && l !== 'PAGE') {
+                  try {
+                    console[l.toLowerCase()].call(console, data);
+                  } catch (ex) {
+                    // IE compat fix
+                    console.log(data);
+                  }
+                }
+                data.level = l;
+
+                return {send: function() {
+                    if (!(typeof data.data === 'object' && !(data.data instanceof Array) && data.data !== null)) {
+                        _warn(eventType + ' won\'t be sent since event is not an object');
+                        return;
                     }
-                    data.level = l;
 
-                    return {send: function() {
-                        var cache = [];
-                        var serialized = JSON.stringify(data, function(key, value) {
-
-                          // cross-browser indexOf fix
-                          var _indexOf = function(array, obj) {
+                    var cache = [];
+                    var serialized = JSON.stringify(data, function(key, value) {
+                        // cross-browser indexOf fix
+                        var _indexOf = function(array, obj) {
                             for (var i = 0; i < array.length; i++) {
-                              if (obj === array[i]) {
-                                return i;
-                              }
+                                if (obj === array[i]) {
+                                    return i;
+                                }
                             }
                             return -1;
-                          };
-                              if (typeof value === "undefined") {
-                                return "undefined";
-                              } else if (typeof value === "object" && value !== null) {
-                                if (_indexOf(cache, value) !== -1) {
-                                  // We've seen this object before;
-                                  // return a placeholder instead to prevent
-                                  // cycles
-                                  return "<?>";
-                                }
-                                cache.push(value);
-                              }
-                          return value;
-                        });
+                        };
 
-                            if (_active) {
-                                _backlog.push(serialized);
-                            } else {
-                                _apiCall(_token, serialized);
+                        if (typeof value === "undefined") {
+                            return "undefined";
+                        } else if (typeof value === "object" && value !== null) {
+                            if (_indexOf(cache, value) !== -1) {
+                              // We've seen this object before;
+                              // return a placeholder instead to prevent
+                              // cycles
+                              return "<?>";
                             }
-                        }};
+                            cache.push(value);
+                        }
+                        return value;
+                    });
+
+                    if (_active) {
+                        _backlog.push(serialized);
+                    } else {
+                        _apiCall(_token, serialized);
+                    }
                 }};
+            }};
         };
 
         /** @expose */
@@ -238,14 +241,15 @@
                   request.onload = function() {
                     if (_backlog.length > 0) {
                       // Submit the next event in the backlog
-                      _apiCall(token, _backlog.shift());
+                      _apiCall(token, _backlog);
+                      _backlog = [];
                     } else {
                       _active = false;
                     }
                   };
                 }
 
-                var uri = (_SSL ? "https://" : "http://") + _endpoint + "/logs/" + _token;
+                var uri = (_SSL ? "https://" : "http://") + _endpoint;
                 request.open("POST", uri, true);
                 if (request.constructor === XMLHttpRequest) {
                     request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
