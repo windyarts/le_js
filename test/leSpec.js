@@ -96,6 +96,48 @@ describe('sending headers', function() {
     afterEach(destroy);
 });
 
+describe('sending common information', function() {
+    beforeEach(mockXMLHttpRequests);
+    beforeEach(addGetJson);
+    beforeEach(function() {
+        LE.init(initConfig);
+    });
+
+    it('logs clientTimestamp as format of 2012–03–14T02:33:42.416587+00:00', function() {
+        LE.log('hi');
+
+        expect(this.getXhrJson(0).clientTimestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}/);
+    });
+
+    it('logs device as format of "Browser: $userAgent$" if not provided', function() {
+        LE.log('hi');
+
+        expect(this.getXhrJson(0).device).toMatch(/^Browser: /);
+    });
+
+    it('logs build as init options', function() {
+        LE.log('hi');
+        expect(this.getXhrJson(0).build).toBe('1.2');
+    });
+
+    it('logs userId as init options', function() {
+        LE.log('hi');
+        expect(this.getXhrJson(0).userId).toBe('test');
+    });
+
+    it('logs userName as init options', function() {
+        LE.log('hi');
+        expect(this.getXhrJson(0).userName).toBe('tester');
+    });
+
+    it('logs sessionId as init options', function() {
+        LE.log('hi');
+        expect(this.getXhrJson(0).sessionId).toBe('session-test');
+    });    
+
+    afterEach(destroy);
+});
+
 describe('sending messages', function () {
     beforeEach(mockXMLHttpRequests);
     beforeEach(addGetJson);
@@ -292,6 +334,7 @@ describe('destroys log streams', function () {
             testConfig[k] = initConfig[k];
         }
         testConfig.name = 'test';
+
         LE.init(testConfig);
         LE.destroy('test');
 

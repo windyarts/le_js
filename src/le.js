@@ -51,6 +51,12 @@
         var _userName = options.userName;
         /** @type {string} */
         var _sessionId = options.sessionId;
+        /** @type {string} */
+        var _device = options.device;
+
+        if (_device === null || typeof _device === 'undefined') {
+            _device = 'Browser: ' + window.navigator.userAgent;
+        }
 
         /**
          * @type {string} */
@@ -128,7 +134,11 @@
 
             var data = {
                 clientTimestamp: toUTCTimestamp(new Date()),
-                device: 'Browser: ' + window.navigator.userAgent,
+                device: _device,
+                userId: _userId,
+                userName: _userName,
+                sessionId: _sessionId,
+                build: _build,
                 data: event
             };
 
