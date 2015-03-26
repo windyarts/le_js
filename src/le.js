@@ -38,8 +38,6 @@
      */
     function LogStream(options) {
         /** @type {string} */
-        var _pageInfo = options.page_info;
-        /** @type {string} */
         var _token = options.token;
         /** @type {boolean} */
         var _print = options.print;
@@ -141,16 +139,6 @@
                 build: _build,
                 data: event
             };
-
-            // Add agent info if required
-            if (_pageInfo !== 'never') {
-                if (!_sentPageInfo || _pageInfo === 'per-entry') {
-                    _sentPageInfo = true;
-                    if (typeof event.screen === "undefined" &&
-                        typeof event.browser === "undefined")
-                      _rawLog(_agentInfo()).level('PAGE').send();
-                }
-            }
 
             return {level: function(l) {
                 // Don't log PAGE events to console
@@ -281,7 +269,6 @@
         // Default values
         var dict = {
             ssl: true,
-            page_info: 'never',
             print: false,
             endpoint: null,
             token: null,
