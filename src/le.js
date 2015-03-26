@@ -26,7 +26,7 @@
         module.exports = factory(root);
     } else {
         // Browser globals (root is window)
-        root.LE = factory(root);
+        root.TT = factory(root);
     }
 }(this, function(window) {
     "use strict";
@@ -59,8 +59,8 @@
         /**
          * @type {string} */
         var _endpoint;
-        if (window.LEENDPOINT) {
-            _endpoint = window.LEENDPOINT;
+        if (window.TTENDPOINT) {
+            _endpoint = window.TTENDPOINT;
         } else {
             _endpoint = "localhost:8080/v1";
         }
@@ -315,7 +315,7 @@
             if (logger) {
                 return logger.log.apply(this, arguments);
             } else
-                throw new Error("You must call LE.init(...) first.");
+                throw new Error("You must call TT.init(...) first.");
         };
 
          // The public interface
@@ -380,7 +380,7 @@
                 'T' + leftZeroFill(date.getHours(), 2) +
                 ':' + leftZeroFill(date.getMinutes(), 2) +
                 ':' + leftZeroFill(date.getSeconds(), 2) +
-                '.' + toInt(date.getMilliseconds() * 1000) +
+                '.' + leftZeroFill(toInt(date.getMilliseconds() * 1000), 6) +
                 ZZ(date);
         }
 
