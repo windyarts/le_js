@@ -272,7 +272,7 @@
 
         // Default values
         var dict = {
-            ssl: true,
+            ssl: false,
             print: false,
             endpoint: null,
             token: null,
