@@ -4,6 +4,7 @@ var GLOBAL = this;
 var TOKEN = 'test_token';
 var initConfig = {
     token: TOKEN,
+    secret: 'test_secret',
     userId: 'test',
     userName: 'tester',
     build: '1.2',
@@ -61,7 +62,7 @@ describe('construction', function () {
             expect(TT.init).toThrow("Invalid parameters for init()");
         });
 
-        ['token', 'userId', 'userName', 'build', 'sessionId'].forEach(function(key) {
+        ['token', 'secret', 'userId', 'userName', 'build', 'sessionId'].forEach(function(key) {
             it('without ' + key, function() {
                 expect(function() {
                     TT.init(clone(initConfig, key));    
@@ -91,7 +92,7 @@ describe('sending headers', function() {
         TT.log('test.event', {});
 
         var request = this.requestList[0];
-        var hash = md5(request.requestBody + request.requestHeaders['X-Product-Key']);
+        var hash = md5(request.requestBody + initConfig.secret);
 
         expect(this.requestList[0].requestHeaders['X-Product-Auth']).toBe(hash);
     });
@@ -238,22 +239,6 @@ describe('sends log level', function(){
         TT.init(initConfig);
     });
 
-    var methods = [
-        'log'
-    ];
-
-    for(var i=0; i<methods.length; i++){
-        var method = methods[i];
-        var level = method.toUpperCase();
-
-        it(level, function(method, level){
-            return function(){
-                TT[method]('test', {});
-                expect(this.getXhrJson(0).level).toBe(level);
-            };
-        }(method, level));
-    }
-
     it('excludes cyclic values', function(){
         var a = {};
         a.b = a;
@@ -292,6 +277,7 @@ describe('destroys log streams', function () {
         }).not.toThrow();
     });
 
+    afterEach(restoreXMLHttpRequests);
     afterEach(destroy);
 });
 
@@ -307,7 +293,7 @@ describe('custom endpoint', function () {
         TT.log('type', {});
         var lastReq = this.requestList[1]; //no idea why its sending two messages
         
-        expect(lastReq.url).toBe('https://somwhere.com/custom-logging');
+        expect(lastReq.url).toBe('http://somwhere.com/custom-logging');
     });
     
     afterEach(restoreXMLHttpRequests);

@@ -1,37 +1,48 @@
 <html lang="en">
   <head>
     <title>test</title>
+    <!-- replace this by your own hosted sdk url -->
     <script src="../product/le.js"></script>
     <script>
-      window.TTENDPOINT = 'localhost:8080/v1/events';
+      // change this to traintracks endpoint, WITHOUT protocol
+      window.TTENDPOINT = 'endpoint.yourhost/v1/events';
 
       TT.init({
-      	token: "aaa",
+        // Required 
+        token: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',   // your product key
+        secret: 'bbbbbbbb-aaaa-aaaa-aaaa-aaaaaaaaaaaa',  // your product secret
+
         userId: 'test',
         userName: 'tester',
         build: '1.2',
         sessionId: 'session-test',
-        print: true
+
+        // Optional
+        print: true  // if console.log data, false by default.
+        device: "Google Chrome" // navigator.userAgent by default, you can override it.
       });
 
       TT.log('event1', {
-        a: 'abc',
-        b: {
-          c: 'dd'
+        key: 'value';
+      });
+
+      TT.log('event2', {
+        arr: ['value', 'another value']
+      });
+
+      TT.log('event2', {
+        obj: {
+          str: 'value',
+          bool: true,
+          num: 1
         }
       });
 
-      TT.log('event2', {
-        x: 'yy',
-        y: 'bb',
-        z: ['a', 'b']
-      });
-
-      TT.log('event2', {
-        l: 'yy',
-        m: 'bb',
-        n: ['a', 'b']
-      });
+      setTimeout(function() {
+        TT.log('event3', {
+          key: 'value'
+        });        
+      }, 3000);
     </script>
   </head>
 

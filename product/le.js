@@ -39,6 +39,8 @@
     function LogStream(options) {
         /** @type {string} */
         var _token = options.token;
+        /** @type {string} */
+        var _secret = options.secret;
         /** @type {boolean} */
         var _print = options.print;
         /** @type {string} */
@@ -185,7 +187,7 @@
                     if (_active) {
                         _backlog.push(serialized);
                     } else {
-                        _apiCall(_token, serialized);
+                        _apiCall(_token, _secret, serialized);
                     }
                 }};
             }};
@@ -194,7 +196,7 @@
         /** @expose */
         this.log = _rawLog;
 
-        var _apiCall = function(token, data) {
+        var _apiCall = function(token, secret, data) {
             _active = true;
 
             // Obtain a browser-specific XHR object
@@ -228,7 +230,7 @@
                             }
                             if (_backlog.length > 0) {
                                 // Submit the next event in the backlog
-                                _apiCall(token, '[' + _backlog.join(',') + ']');
+                                _apiCall(token, secret, '[' + _backlog.join(',') + ']');
                                 _backlog = [];
                             } else {
                                 _active = false;
@@ -241,7 +243,7 @@
                   request.onload = function() {
                     if (_backlog.length > 0) {
                       // Submit the next event in the backlog
-                      _apiCall(token, '[' + _backlog.join(',') + ']');
+                      _apiCall(token, secret, '[' + _backlog.join(',') + ']');
                       _backlog = [];
                     } else {
                       _active = false;
@@ -255,7 +257,7 @@
                     request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                     request.setRequestHeader('Content-type', 'application/json;charset=utf-8');
                     request.setRequestHeader('X-Product-Key', token);
-                    request.setRequestHeader('X-Product-Auth', md5(data + token));
+                    request.setRequestHeader('X-Product-Auth', md5(data + secret));
                 }
                 request.send(data);
             }
@@ -276,6 +278,7 @@
             print: false,
             endpoint: null,
             token: null,
+            secret: null,
             userId: null,
             userName: null,
             sessionId: null,
@@ -293,6 +296,7 @@
 
         var requiredKeys = {
             token: toString,
+            secret: toString,
             userId: toString,
             userName: toString,
             sessionId: toString,
