@@ -3,13 +3,36 @@
     <title>test</title>
     <script src="../product/le.js"></script>
     <script>
-      LE.init({
-	token: 'YOUR-TOKEN', // CHANGEME
-	onerror: true,
-	page_info: 'per-page' // 'per-entry', 'none'
+      window.TTENDPOINT = 'localhost:8080/v1/events';
+
+      TT.init({
+      	token: "aaa",
+        userId: 'test',
+        userName: 'tester',
+        build: '1.2',
+        sessionId: 'session-test',
+        print: true
+      });
+
+      TT.log('event1', {
+        a: 'abc',
+        b: {
+          c: 'dd'
+        }
+      });
+
+      TT.log('event2', {
+        x: 'yy',
+        y: 'bb',
+        z: ['a', 'b']
+      });
+
+      TT.log('event2', {
+        l: 'yy',
+        m: 'bb',
+        n: ['a', 'b']
       });
     </script>
-    <script src="./live.js"></script>
   </head>
 
   <body></body>

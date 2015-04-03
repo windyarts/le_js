@@ -149,7 +149,6 @@
                     console.log(data);
                   }
                 }
-                data.level = l;
 
                 return {send: function() {
                     if (!(typeof data.data === 'object' && !(data.data instanceof Array) && data.data !== null)) {
@@ -229,7 +228,8 @@
                             }
                             if (_backlog.length > 0) {
                                 // Submit the next event in the backlog
-                                _apiCall(token, _backlog.shift());
+                                _apiCall(token, '[' + _backlog.join(',') + ']');
+                                _backlog = [];
                             } else {
                                 _active = false;
                             }
@@ -241,7 +241,7 @@
                   request.onload = function() {
                     if (_backlog.length > 0) {
                       // Submit the next event in the backlog
-                      _apiCall(token, _backlog);
+                      _apiCall(token, '[' + _backlog.join(',') + ']');
                       _backlog = [];
                     } else {
                       _active = false;
