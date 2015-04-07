@@ -117,33 +117,33 @@ describe('sending common information', function() {
     it('logs clientTimestamp as format of 2012–03–14T02:33:42.416587+00:00', function() {
         TT.log('test.event', {});
 
-        expect(this.getXhrJson(0).clientTimestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}/);
+        expect(this.getXhrJson(0)[0].clientTimestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}/);
     });
 
     it('logs device as format of "Browser: $userAgent$" if not provided', function() {
         TT.log('test.event', {});
 
-        expect(this.getXhrJson(0).device).toMatch(/^Browser: /);
+        expect(this.getXhrJson(0)[0].device).toMatch(/^Browser: /);
     });
 
     it('logs build as init options', function() {
         TT.log('test.event', {});
-        expect(this.getXhrJson(0).build).toBe('1.2');
+        expect(this.getXhrJson(0)[0].build).toBe('1.2');
     });
 
     it('logs userId as init options', function() {
         TT.log('test.event', {});
-        expect(this.getXhrJson(0).userId).toBe('test');
+        expect(this.getXhrJson(0)[0].userId).toBe('test');
     });
 
     it('logs userName as init options', function() {
         TT.log('test.event', {});
-        expect(this.getXhrJson(0).userName).toBe('tester');
+        expect(this.getXhrJson(0)[0].userName).toBe('tester');
     });
 
     it('logs sessionId as init options', function() {
         TT.log('test.event', {});
-        expect(this.getXhrJson(0).sessionId).toBe('session-test');
+        expect(this.getXhrJson(0)[0].sessionId).toBe('session-test');
     });    
 
     afterEach(restoreXMLHttpRequests);
@@ -172,26 +172,26 @@ describe('sending messages', function () {
 
     it('logs event type', function() {
         TT.log('test.event', {});
-        expect(this.getXhrJson(0).eventType).toBe('test.event');
+        expect(this.getXhrJson(0)[0].eventType).toBe('test.event');
     });
 
     it('logs clientTimestamp as format of 2012–03–14T02:33:42.416587+00:00', function() {
         TT.log('test.event', {});
 
-        expect(this.getXhrJson(0).clientTimestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}/);
+        expect(this.getXhrJson(0)[0].clientTimestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}/);
     });
 
     it('logs device as format of "Browser: $userAgent$"', function() {
         TT.log('test.event', {});
 
-        expect(this.getXhrJson(0).device).toMatch(/^Browser: /);
+        expect(this.getXhrJson(0)[0].device).toMatch(/^Browser: /);
     });
 
     it('logs event data correctly', function() {
         TT.log('test.data', {
             random: 1
         });
-        expect(this.getXhrJson(0).data).toEqual({ random: 1});
+        expect(this.getXhrJson(0)[0].data).toEqual({ random: 1});
     });
 
     it('logs null values', function(){
@@ -214,7 +214,7 @@ describe('sending messages', function () {
             nullVal: null
         });
 
-        var event = this.getXhrJson(0).data;
+        var event = this.getXhrJson(0)[0].data;
         expect(event.undef).toBe('undefined');
         expect(event.nullVal).toBe(null);
     });
@@ -245,7 +245,7 @@ describe('sends log level', function(){
 
         TT.log('cyclic', a);
 
-        expect(this.getXhrJson(0).data.b).toBe('<?>');
+        expect(this.getXhrJson(0)[0].data.b).toBe('<?>');
     });
 
     afterEach(restoreXMLHttpRequests);
