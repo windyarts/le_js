@@ -187,7 +187,7 @@
                     if (_active) {
                         _backlog.push(serialized);
                     } else {
-                        _apiCall(_token, _secret, serialized);
+                        _apiCall(_token, _secret, '[' + serialized + ']');
                     }
                 }};
             }};
