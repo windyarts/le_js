@@ -75,6 +75,24 @@ describe('construction', function () {
     afterEach(destroy);
 });
 
+describe('flag dry', function() {
+    beforeEach(mockXMLHttpRequests);
+    beforeEach(addGetJson);
+
+    it('disables underlying requests', function() {
+        var config = clone(initConfig);
+        config.dry = true;
+        TT.init(config);
+
+        TT.log('event', { a: 1 });
+
+        expect(this.requestList.length).toBe(0);
+    });
+
+    afterEach(restoreXMLHttpRequests);
+    afterEach(destroy);
+});
+
 describe('sending headers', function() {
     beforeEach(mockXMLHttpRequests);
     beforeEach(addGetJson);

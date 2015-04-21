@@ -87,6 +87,9 @@
         /** @type {boolean} */
         var _sentPageInfo = false;
 
+        /** @type {boolean} */
+        var _dry = options.dry;
+
         var _agentInfo = function() {
             var nav = window.navigator || {doNotTrack: undefined};
             var screen = window.screen || {};
@@ -184,6 +187,8 @@
                         return value;
                     });
 
+                    if (_dry) { return; }
+
                     if (_active) {
                         _backlog.push(serialized);
                     } else {
@@ -276,6 +281,7 @@
         var dict = {
             ssl: false,
             print: false,
+            dry: false,
             endpoint: null,
             token: null,
             secret: null,
